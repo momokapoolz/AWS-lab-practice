@@ -1,0 +1,23 @@
+java -version
+
+curl.exe https://start.spring.io/starter.zip `
+  -d type=maven-project `
+  -d language=java `
+  -d javaVersion=24 `
+  -d groupId=com.example `
+  -d artifactId=s3demo `
+  -d name=s3demo `
+  -d packageName=com.example.s3demo `
+  -d dependencies=web `
+  -o s3demo.zip
+
+tar -xf s3demo.zip
+Remove-Item s3demo.zip
+
+ - s3demo can be change by another name
+
+.\mvnw clean install -U
+
+.\mvnw  spring-boot:run
+
+.\mvnw.cmd clean test

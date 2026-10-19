@@ -10,6 +10,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.Assert;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -34,7 +35,7 @@ public class S3Controller {
         this.bucket = bucket;
     }
 
-    @PostMapping(value = "/s3", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "text/plain;charset=UTF-8")
+    @PostMapping(value = "/upload-file-s3", consumes = MediaType.MULTIPART_FORM_DATA_VALUE, produces = "text/plain;charset=UTF-8")
     public String upload(@RequestParam("key") String key, @RequestParam("file") MultipartFile file) throws IOException {
         if (key.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "key must not be blank");
@@ -50,7 +51,7 @@ public class S3Controller {
         return "Uploaded: " + key;
     }
 
-    @GetMapping("/s3")
+    @GetMapping("/get-file-s3")
     public ResponseEntity<StreamingResponseBody> download(@RequestParam("key") String key) {
         if (key.isBlank()) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "key must not be blank");
@@ -79,5 +80,23 @@ public class S3Controller {
                 .header(HttpHeaders.CONTENT_DISPOSITION,
                         ContentDisposition.attachment().filename(filename, StandardCharsets.UTF_8).build().toString())
                 .body(body);
+    }
+
+    @PostMapping ("/create-bucket")
+    public String createBucket(@RequestParam("bucketName") String bucketName) {
+        if (bucketName.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "bucketName must not be blank");
+        }
+        s3.createBucket(r -> r.bucket(bucketName));
+        return "Bucket created: " + bucketName;
+    }
+
+    @DeleteMapping ("/delete-file")
+    public String deleteFile(@RequestParam("key") String key) {
+        if (key.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "key must not be blank");
+        }
+        s3.deleteObject(r -> r.bucket(bucket).key(key));
+        return "File deleted: " + key;
     }
 }

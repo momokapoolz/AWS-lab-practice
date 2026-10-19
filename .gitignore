@@ -33,3 +33,32 @@ build/
 .vscode/
 
 .env
+
+#terraform
+# Local .terraform directories (contains downloaded plugins and modules)
+**/.terraform/*
+
+# .tfstate files (contains sensitive data and infrastructure state)
+*.tfstate
+*.tfstate.*
+
+# Crash log files
+crash.log
+crash.*.log
+
+# Exclude all .tfvars files (likely to contain passwords, private keys, and secrets)
+*.tfvars
+*.tfvars.json
+
+# Ignore override files (usually used for local-only adjustments)
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Ignore transient lock info files created during terraform apply
+.terraform.tfstate.lock.info
+
+# Ignore CLI configuration files
+.terraformrc
+terraform.rc

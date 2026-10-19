@@ -1,0 +1,6 @@
+# thêm Terraform thành global
+[Environment]::SetEnvironmentVariable("Path", [Environment]::GetEnvironmentVariable("Path", "User") + ";D:\Terraform", "User")
+
+terraform init     # tải provider aws từ Registry
+terraform plan     # xem trước sẽ tạo gì
+terraform apply    # gõ "yes" để tạo thật

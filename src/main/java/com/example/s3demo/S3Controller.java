@@ -13,6 +13,7 @@ import org.springframework.util.Assert;
 import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
@@ -23,6 +24,10 @@ import software.amazon.awssdk.core.sync.RequestBody;
 import software.amazon.awssdk.services.s3.S3Client;
 import software.amazon.awssdk.services.s3.model.GetObjectResponse;
 import software.amazon.awssdk.services.s3.model.NoSuchKeyException;
+import software.amazon.awssdk.services.s3.model.PutObjectRequest;
+import software.amazon.awssdk.services.s3.model.S3Exception;
+
+import java.util.function.UnaryOperator;
 
 @RestController
 public class S3Controller {
@@ -98,5 +103,46 @@ public class S3Controller {
         }
         s3.deleteObject(r -> r.bucket(bucket).key(key));
         return "File deleted: " + key;
+    }
+
+    @PutMapping ("/update-file")    
+    public void update(UnaryOperator<String> modifier, @RequestParam ("key") String key) {
+        if (key.isBlank()) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "key must not be blank");
+        }
+
+        for (int attempt = 1; attempt <= 5; attempt++) {
+            var resp = s3.getObject(r -> r.bucket(bucket).key(key));
+
+            String etag = resp.response().eTag();
+            String current = resp.toString();
+
+            String updated = modifier.apply(current);
+
+            try {
+                s3.putObject(
+                    PutObjectRequest.builder()
+                        .bucket(bucket).key(key)
+                        .ifMatch(etag)
+                        .contentType("application/json")
+                        .build(),
+                    RequestBody.fromString(updated));
+                return; 
+            } catch (S3Exception e) {
+                if (e.statusCode() == 412) {
+                    backoff(attempt);
+                    continue;
+                }
+                throw e;
+            }
+        }
+    }
+
+    private void backoff(int attempt) {
+        try {
+            Thread.sleep((long) (50 * Math.pow(2, attempt)) + (long) (Math.random() * 50));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
